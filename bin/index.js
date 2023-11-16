@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import dotenv from "dotenv";
 import puppeteer from "puppeteer";
 import ora from "ora";

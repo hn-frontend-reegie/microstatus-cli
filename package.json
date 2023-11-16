@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "description": "CLI-based time-in/time-out for Microsourcing employees",
   "main": "index.js",
+  "bin": {
+    "microstatus-cli": "./bin/index.js"
+  },
   "scripts": {
-    "start": "node index.js"
+    "dev": "node bin/index.js"
   },
   "author": "Reegie Yorong",
   "license": "ISC",
