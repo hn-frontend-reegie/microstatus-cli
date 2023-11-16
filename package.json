@@ -7,7 +7,7 @@
     "microstatus-cli": "./bin/index.js"
   },
   "scripts": {
-    "dev": "node bin/index.js"
+    "dev": "ENV=dev node bin/index.js"
   },
   "author": "Reegie Yorong",
   "license": "ISC",

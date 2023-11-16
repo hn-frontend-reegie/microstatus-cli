@@ -247,7 +247,7 @@ const run = async () => {
   spinner.start("Initializing.");
 
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: process.env.ENV === "dev" ? false : "new",
     devtools: true,
   });
 
@@ -275,6 +275,7 @@ const run = async () => {
   }
 
   spinner.stop();
+  process.exit();
 };
 
 await run();
