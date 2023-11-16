@@ -238,8 +238,8 @@ const run = async () => {
       name: "action",
       message: "What do you want to do?",
       choices: [
-        { title: "Login", value: "Login" },
-        { title: "Logout", value: "Logout" },
+        { title: "DTR Login", value: "dtr:in" },
+        { title: "DTR Logout", value: "dtr:out" },
       ],
     },
   ]);
@@ -265,10 +265,13 @@ const run = async () => {
   await doVerification(page);
   await removePopups(page);
 
-  if (userChoices.action === "Logout") {
-    await endWork(page);
-  } else {
-    await startWork(page);
+  switch (userChoices.action) {
+    case "dtr:out":
+      await endWork(page);
+      break;
+    case "dtr:in":
+      await startWork(page);
+      break;
   }
 
   spinner.stop();
