@@ -101,7 +101,7 @@ const endWork = async (page) => {
   );
 
   if (isDisabled) {
-    exitWithInfo(page, "You have already started work for today.");
+    exitWithInfo(page, "You have already ended work for today.", true);
   }
 
   await clickElement(page, `${endWorkSelector} .dashboard-button-div`);
