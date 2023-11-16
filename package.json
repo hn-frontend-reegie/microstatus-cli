@@ -1,8 +1,8 @@
 {
   "name": "microstatus-cli",
-  "version": "1.0.0",
-  "description": "CLI-based time-in/time-out for Microsourcing employees",
-  "main": "index.js",
+  "version": "0.1.0",
+  "description": "CLI-based tool for MicroSourcing employees",
+  "main": "./bin/index.js",
   "bin": {
     "microstatus-cli": "./bin/index.js"
   },
