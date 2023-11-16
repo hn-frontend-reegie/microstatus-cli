@@ -3,7 +3,7 @@
 import dotenv from "dotenv";
 import puppeteer from "puppeteer";
 import ora from "ora";
-import prompt from "prompt";
+import prompts from "prompts";
 
 dotenv.config();
 const spinner = ora({ color: "green" });
@@ -173,30 +173,21 @@ const clickElement = async (page, selector) => {
 };
 
 const promptForAuthCode = async () => {
-  let valid = false;
-  let code;
-  let result = {};
+  const { code } = await prompts({
+    type: "number",
+    name: "code",
+    message: "Enter your auth code (6-digit)",
+    validate: (value) => {
+      const validation = /^[0-9]{6}$/;
+      const valid = validation.test(value);
 
-  do {
-    prompt.start();
+      if (!valid) {
+        return "Please enter a valid 6-digit code!";
+      }
 
-    result = await prompt.get({
-      properties: {
-        code: {
-          required: true,
-          message: "Enter your auth code (6-digit)",
-          warning:
-            "Please provide a valid 6-digit auth code from authenticator app",
-        },
-      },
-    });
-
-    code = result.code;
-
-    const validation = /^[0-9]{6}$/;
-
-    valid = validation.test(code);
-  } while (!valid);
+      return valid;
+    },
+  });
 
   return code;
 };
@@ -241,6 +232,18 @@ const exitWithInfo = async (page, message, showLogs) => {
 };
 
 const run = async () => {
+  const userChoices = await prompts([
+    {
+      type: "select",
+      name: "action",
+      message: "What do you want to do?",
+      choices: [
+        { title: "Login", value: "Login" },
+        { title: "Logout", value: "Logout" },
+      ],
+    },
+  ]);
+
   spinner.start("Initializing.");
 
   const browser = await puppeteer.launch({
@@ -261,8 +264,12 @@ const run = async () => {
   await loginUser(page);
   await doVerification(page);
   await removePopups(page);
-  await startWork(page);
-  // await endWork(page);
+
+  if (userChoices.action === "Logout") {
+    await endWork(page);
+  } else {
+    await startWork(page);
+  }
 
   spinner.stop();
 };
