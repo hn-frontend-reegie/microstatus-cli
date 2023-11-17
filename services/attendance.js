@@ -46,6 +46,8 @@ export const timeOut = async (page) => {
     await waitForText(page, "Are you sure you want to End your shift?");
 
     await clickElement(page, ".ms-dialog-buttonset button:first-of-type");
+
+    return response();
   } catch (error) {
     return response(error.message);
   }
