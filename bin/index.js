@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import puppeteer from "puppeteer";
 import ora from "ora";
 import prompts from "prompts";
+import cliTable from "cli-table";
 
 dotenv.config();
 const spinner = ora({ color: "green" });
@@ -76,7 +77,11 @@ const startWork = async (page) => {
     );
 
     if (isDisabled) {
-      await exitWithInfo(page, "You have already started work for today.", true);
+      await exitWithInfo(
+        page,
+        "You have already started work for today.",
+        true
+      );
     }
 
     await clickElement(page, `${selector} .dashboard-button-div`);
@@ -220,7 +225,13 @@ const printLogs = async (page) => {
     };
   });
 
-  spinner.info(`Logs today: [ IN: ${login}, OUT: ${logout} ]`);
+  const table = new cliTable({
+    head: ["Time In", "Time Out"],
+    colWidths: [15, 15],
+  });
+
+  table.push([login, logout]);
+  console.log(table.toString());
 };
 
 const exitWithInfo = async (page, message, showLogs) => {
@@ -249,7 +260,7 @@ const run = async () => {
   spinner.start("Initializing.");
 
   const browser = await puppeteer.launch({
-    headless: process.env.ENV === "dev" ? false : "new",
+    headless: process.env.NODE_ENV === "development" ? false : "new",
     devtools: true,
   });
 

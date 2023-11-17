@@ -7,17 +7,21 @@
     "microstatus-cli": "./bin/index.js"
   },
   "scripts": {
-    "dev": "ENV=dev node bin/index.js"
+    "dev": "cross-env NODE_ENV=development node bin/index.js"
   },
   "author": "Reegie Yorong",
   "license": "ISC",
   "dependencies": {
     "cli-spinners": "^2.9.1",
+    "cli-table": "^0.3.11",
     "dotenv": "^16.3.1",
     "ora": "^7.0.1",
     "prompts": "^2.4.2",
     "puppeteer": "^21.5.2",
     "yargs": "^17.7.2"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
 }
