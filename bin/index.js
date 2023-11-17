@@ -4,11 +4,13 @@ import dotenv from "dotenv";
 import puppeteer, { TimeoutError } from "puppeteer";
 import ora from "ora";
 import prompts from "prompts";
+import os from "os";
+import fs from "fs";
+import path from "path";
 import { login, verifyAuthCode } from "../services/auth.js";
 import { closeAnnouncements, closeDialogs } from "../services/common.js";
 import { printAttendance, timeIn, timeOut } from "../services/attendance.js";
 
-dotenv.config();
 const spinner = ora({ color: "green" });
 
 const loginUser = async (page) => {
@@ -134,4 +136,26 @@ const run = async () => {
   process.exit();
 };
 
+const loadConfiguration = () => {
+  if (process.env.NODE_ENV === "development") {
+    dotenv.config();
+  } else {
+    const userHomeDir = os.homedir();
+    const homeConfig = path.join(userHomeDir, ".microstatuscliconfig");
+
+    if (!fs.existsSync(homeConfig)) {
+      spinner.fail("Config file not found.");
+
+      spinner.info(
+        `Please create a file ${homeConfig} containing your configuration.`
+      );
+
+      process.exit();
+    }
+
+    dotenv.config({ path: homeConfig });
+  }
+};
+
+loadConfiguration();
 await run();
