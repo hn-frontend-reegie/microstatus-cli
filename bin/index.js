@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
 import dotenv from "dotenv";
-import puppeteer from "puppeteer";
+import puppeteer, { TimeoutError } from "puppeteer";
 import ora from "ora";
 import prompts from "prompts";
-import cliTable from "cli-table";
+import { login, verifyAuthCode } from "../services/auth.js";
+import { closeAnnouncements, closeDialogs } from "../services/common.js";
+import { printAttendance, timeIn, timeOut } from "../services/attendance.js";
 
 dotenv.config();
 const spinner = ora({ color: "green" });
@@ -12,19 +14,7 @@ const spinner = ora({ color: "green" });
 const loginUser = async (page) => {
   spinner.start("Logging you in.");
 
-  const employeeButton = "#Emp";
-  await page.waitForSelector(employeeButton);
-  await page.click(employeeButton);
-
-  const idInput = "#IDEmp";
-  const passwordInput = "#Password";
-
-  await page.type(idInput, process.env.EMPLOYEE_ID);
-  await page.type(passwordInput, process.env.PASSWORD);
-
-  const submitBtn = ".box_loginbut a";
-  await page.waitForSelector(submitBtn);
-  await page.click(submitBtn);
+  await login(page);
 
   spinner.succeed();
 };
@@ -32,92 +22,38 @@ const loginUser = async (page) => {
 const removePopups = async (page) => {
   spinner.start("Removing dialogs and popups.");
 
-  try {
-    await page.waitForSelector("#announcements");
-
-    await page.evaluate(() => {
-      const announcements = document.getElementById("announcements");
-      announcements.remove();
-    });
-  } catch (error) {
-    console.log("No announcements.");
-  }
-
-  await closeDialog(page);
+  await closeAnnouncements(page);
+  await closeDialogs(page);
 
   spinner.succeed();
-};
-
-const closeDialog = async (page) => {
-  try {
-    await page.waitForSelector(".ms-dialog");
-
-    await page.evaluate(() => {
-      const dialogs = document.querySelectorAll(".ms-dialog");
-      dialogs.forEach((dialog) => {
-        const closeButton = dialog.querySelector(".ms-dialog-titlebar-close");
-        closeButton.click();
-      });
-    });
-  } catch (error) {
-    console.log("No dialog to close.");
-  }
 };
 
 const startWork = async (page) => {
   spinner.start("Starting work.");
 
-  try {
-    const selector = "#btndiv_W1";
-    const button = await page.waitForSelector(selector);
+  const { success, message } = await timeIn(page);
 
-    const isDisabled = await page.evaluate(
-      (el) => el.classList.contains("dashboard-button-off"),
-      button
-    );
-
-    if (isDisabled) {
-      await exitWithInfo(
-        page,
-        "You have already started work for today.",
-        true
-      );
-    }
-
-    await clickElement(page, `${selector} .dashboard-button-div`);
-
-    spinner.succeed();
-
-    await printLogs(page);
-  } catch (error) {
-    spinner.fail(error.message);
+  if (!success) {
+    await exitWithError(page, message, true);
   }
+
+  spinner.succeed();
+
+  await printAttendance(page);
 };
 
 const endWork = async (page) => {
   spinner.start("Ending work session.");
 
-  const endWorkSelector = "#btndiv_EW";
-  const button = await page.waitForSelector(endWorkSelector);
+  const { success, message } = await timeOut(page);
 
-  const isDisabled = await page.evaluate(
-    (el) => el.classList.contains("dashboard-button-off"),
-    button
-  );
-
-  if (isDisabled) {
-    exitWithInfo(page, "You have already ended work for today.", true);
+  if (!success) {
+    await exitWithError(page, message, true);
   }
-
-  await clickElement(page, `${endWorkSelector} .dashboard-button-div`);
-
-  await waitForText(page, "Are you sure you want to End your shift?");
-
-  await clickElement(page, ".ms-dialog-buttonset button:first-of-type");
 
   spinner.succeed();
 
-  await printLogs(page);
+  await printAttendance(page);
 };
 
 const doVerification = async (page) => {
@@ -129,116 +65,23 @@ const doVerification = async (page) => {
 
     spinner.succeed();
   } catch (error) {
-    spinner.info("2-step verification not needed, skipped.");
+    if (error instanceof TimeoutError) {
+      spinner.info("2-step verification not needed, skipped.");
+    } else {
+      spinner.fail(error.message);
+    }
 
     return;
   }
 
-  let invalid = true;
-
-  do {
-    spinner.stop();
-    const code = await promptForAuthCode();
-    spinner.start("Executing verification.");
-    await page.type(authCodeSelector, code);
-    await page.click("#googleAuthCodeSubmit");
-
-    try {
-      await waitForText(page, "Invalid google code");
-      spinner.fail("Wrong auth code. Please try again.");
-      await closeDialog(page);
-
-      invalid = true;
-    } catch (error) {
-      invalid = false;
-      spinner.succeed();
-
-      break;
-    }
-  } while (invalid);
+  await verifyAuthCode(page, spinner);
 };
 
-const waitForText = (page, text, options = {}) => {
-  return page.waitForFunction(
-    (text) => document.querySelector("body").innerText.includes(text),
-    { ...options },
-    text
-  );
-};
-
-const clickElement = async (page, selector) => {
-  try {
-    await page.evaluate((selector) => {
-      const button = document.querySelector(selector);
-      button.click();
-    }, selector);
-  } catch (error) {
-    console.log("Problem clicking element", error.message);
-  }
-};
-
-const promptForAuthCode = async () => {
-  const { code } = await prompts({
-    type: "number",
-    name: "code",
-    message: "Enter your auth code (6-digit)",
-    validate: (value) => {
-      const validation = /^[0-9]{6}$/;
-      const valid = validation.test(value);
-
-      if (!valid) {
-        return "Please enter a valid 6-digit code!";
-      }
-
-      return valid;
-    },
-  });
-
-  return code;
-};
-
-const printLogs = async (page) => {
-  await page.waitForSelector("#graphDiv");
-
-  const { login, logout } = await page.evaluate(() => {
-    const columns = document.querySelectorAll(
-      "#graphDiv table tr:first-child td"
-    );
-
-    function formatTime(time) {
-      if (time === undefined) {
-        return "N/a";
-      }
-
-      time = time.trim();
-
-      if (time === "") {
-        return "N/a";
-      }
-
-      return time;
-    }
-
-    return {
-      login: formatTime(columns?.[0].textContent),
-      logout: formatTime(columns?.[columns.length - 1].textContent),
-    };
-  });
-
-  const table = new cliTable({
-    head: ["Time In", "Time Out"],
-    colWidths: [15, 15],
-  });
-
-  table.push([login, logout]);
-  console.log(table.toString());
-};
-
-const exitWithInfo = async (page, message, showLogs) => {
-  spinner.info(message);
+const exitWithError = async (page, message, showLogs) => {
+  spinner.fail(message);
 
   if (showLogs) {
-    await printLogs(page);
+    await printAttendance(page);
   }
 
   process.exit();
@@ -251,8 +94,8 @@ const run = async () => {
       name: "action",
       message: "What do you want to do?",
       choices: [
-        { title: "DTR Login", value: "dtr:in" },
-        { title: "DTR Logout", value: "dtr:out" },
+        { title: "Attendance: Time-in", value: "attendance:in" },
+        { title: "Attendance: Time-out", value: "attendance:out" },
       ],
     },
   ]);
@@ -279,10 +122,10 @@ const run = async () => {
   await removePopups(page);
 
   switch (userChoices.action) {
-    case "dtr:out":
+    case "attendance:out":
       await endWork(page);
       break;
-    case "dtr:in":
+    case "attendance:in":
       await startWork(page);
       break;
   }
