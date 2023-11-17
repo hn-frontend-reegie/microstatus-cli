@@ -76,7 +76,7 @@ const startWork = async (page) => {
     );
 
     if (isDisabled) {
-      exitWithInfo(page, "You have already started work for today.", true);
+      await exitWithInfo(page, "You have already started work for today.", true);
     }
 
     await clickElement(page, `${selector} .dashboard-button-div`);
@@ -193,6 +193,8 @@ const promptForAuthCode = async () => {
 };
 
 const printLogs = async (page) => {
+  await page.waitForSelector("#graphDiv");
+
   const { login, logout } = await page.evaluate(() => {
     const columns = document.querySelectorAll(
       "#graphDiv table tr:first-child td"
@@ -218,7 +220,7 @@ const printLogs = async (page) => {
     };
   });
 
-  spinner.info(`Logs today: [ IN: ${login}, OUT: ${logout}]`);
+  spinner.info(`Logs today: [ IN: ${login}, OUT: ${logout} ]`);
 };
 
 const exitWithInfo = async (page, message, showLogs) => {
