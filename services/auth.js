@@ -27,6 +27,7 @@ export const verifyAuthCode = async (page, spinner) => {
 
     spinner.start("Executing verification.");
 
+    const authCodeSelector = "#googleAuthCode";
     await page.type(authCodeSelector, code);
     await page.click("#googleAuthCodeSubmit");
 
@@ -64,5 +65,5 @@ const promptForAuthCode = async () => {
     },
   });
 
-  return code;
+  return code.toString();
 };
