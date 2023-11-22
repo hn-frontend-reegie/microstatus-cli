@@ -96,9 +96,9 @@ export const printAttendance = async (page) => {
   }
 };
 
-const response = (message) => {
+const response = (errorMessage) => {
   return {
-    success: message === null,
-    message: message ?? "",
+    success: errorMessage === undefined,
+    message: errorMessage ?? "",
   };
 };
