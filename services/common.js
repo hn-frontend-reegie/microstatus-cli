@@ -2,7 +2,7 @@ import { TimeoutError } from "puppeteer";
 
 export const closeDialogs = async (page) => {
   try {
-    await page.waitForSelector(".ms-dialog");
+    await page.waitForSelector(".ms-dialog", { timeout: 5000 });
 
     await page.evaluate(() => {
       const dialogs = document.querySelectorAll(".ms-dialog");
@@ -20,7 +20,7 @@ export const closeDialogs = async (page) => {
 
 export const closeAnnouncements = async (page) => {
   try {
-    await page.waitForSelector("#announcements");
+    await page.waitForSelector("#announcements", { timeout: 5000 });
 
     await page.evaluate(() => {
       const announcements = document.getElementById("announcements");
