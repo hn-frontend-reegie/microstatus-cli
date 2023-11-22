@@ -1,3 +1,5 @@
+import { TimeoutError } from "puppeteer";
+
 export const closeDialogs = async (page) => {
   try {
     await page.waitForSelector(".ms-dialog");
@@ -10,7 +12,9 @@ export const closeDialogs = async (page) => {
       });
     });
   } catch (error) {
-    console.log("No dialog to close.");
+    if (!(error instanceof TimeoutError)) {
+      console.log(`Error: ${error.message}`);
+    }
   }
 };
 
@@ -23,7 +27,9 @@ export const closeAnnouncements = async (page) => {
       announcements.remove();
     });
   } catch (error) {
-    console.log("No announcements.");
+    if (!(error instanceof TimeoutError)) {
+      console.log(`Error: ${error.message}`);
+    }
   }
 };
 
