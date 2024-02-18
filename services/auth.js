@@ -1,7 +1,7 @@
 import prompts from "prompts";
 import { closeDialogs, waitForText } from "./common.js";
 
-export const login = async (page) => {
+export const login = async (page, employeeId, password) => {
   const employeeButton = "#Emp";
   await page.waitForSelector(employeeButton);
   await page.click(employeeButton);
@@ -9,8 +9,8 @@ export const login = async (page) => {
   const idInput = "#IDEmp";
   const passwordInput = "#Password";
 
-  await page.type(idInput, process.env.EMPLOYEE_ID);
-  await page.type(passwordInput, process.env.PASSWORD);
+  await page.type(idInput, employeeId);
+  await page.type(passwordInput, password);
 
   const submitBtn = ".box_loginbut a";
   await page.waitForSelector(submitBtn);

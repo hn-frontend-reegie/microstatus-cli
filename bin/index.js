@@ -8,24 +8,14 @@ import os from "os";
 import fs from "fs";
 import path from "path";
 import { login, verifyAuthCode } from "../services/auth.js";
-import { closeAnnouncements, closeDialogs } from "../services/common.js";
-import { printAttendance, timeIn, timeOut } from "../services/attendance.js";
+import { ATTENDANCE, logAttendance, printLog } from "../services/attendance.js";
 
 const spinner = ora({ color: "green" });
 
 const loginUser = async (page) => {
   spinner.start("Logging you in.");
 
-  await login(page);
-
-  spinner.succeed();
-};
-
-const removePopups = async (page) => {
-  spinner.start("Removing dialogs and popups.");
-
-  await closeAnnouncements(page);
-  await closeDialogs(page);
+  await login(page, process.env.EMPLOYEE_ID, process.env.PASSWORD);
 
   spinner.succeed();
 };
@@ -33,29 +23,33 @@ const removePopups = async (page) => {
 const startWork = async (page) => {
   spinner.start("Starting work.");
 
-  const { success, message } = await timeIn(page);
+  const { success, message, log } = await logAttendance(
+    page,
+    ATTENDANCE.TIME_IN
+  );
 
   if (!success) {
-    await exitWithError(page, message, true);
+    await exitWithError(message);
   }
 
   spinner.succeed();
-
-  await printAttendance(page);
+  printLog(log);
 };
 
 const endWork = async (page) => {
   spinner.start("Ending work session.");
 
-  const { success, message } = await timeOut(page);
+  const { success, message, log } = await logAttendance(
+    page,
+    ATTENDANCE.TIME_OUT
+  );
 
   if (!success) {
-    await exitWithError(page, message, true);
+    await exitWithError(message);
   }
 
   spinner.succeed();
-
-  await printAttendance(page);
+  printLog(log);
 };
 
 const doVerification = async (page) => {
@@ -79,12 +73,8 @@ const doVerification = async (page) => {
   await verifyAuthCode(page, spinner);
 };
 
-const exitWithError = async (page, message, showLogs) => {
+const exitWithError = async (message) => {
   spinner.fail(message);
-
-  if (showLogs) {
-    await printAttendance(page);
-  }
 
   process.exit();
 };
@@ -105,7 +95,8 @@ const run = async () => {
   spinner.start("Initializing.");
 
   const browser = await puppeteer.launch({
-    headless: process.env.NODE_ENV === "development" ? false : "new",
+    // headless: process.env.NODE_ENV === "development" ? false : "new",
+    headless: false,
     devtools: true,
   });
 
@@ -121,7 +112,6 @@ const run = async () => {
 
   await loginUser(page);
   await doVerification(page);
-  await removePopups(page);
 
   switch (userChoices.action) {
     case "attendance:out":

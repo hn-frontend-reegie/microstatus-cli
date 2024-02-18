@@ -1,56 +1,40 @@
-import { clickElement, wait, waitForText } from "./common.js";
+import { wait } from "./common.js";
 import cliTable from "cli-table";
+import FormData from "form-data";
 
-export const timeIn = async (page) => {
+export const ATTENDANCE = {
+  TIME_IN: "W1",
+  TIME_OUT: "W2",
+};
+
+export const logAttendance = async (page, type) => {
   try {
-    const selector = "#btndiv_W1";
-    const button = await page.waitForSelector(selector);
+    const log = await page.evaluate(async (type) => {
+      const data = new FormData();
+      data.append("stat", type);
 
-    await wait(1500);
+      const response = await fetch("/employees/empdashboard/poststatus", {
+        method: "POST",
+        body: data,
+      }).then((response) => response.json());
 
-    const isDisabled = await page.evaluate(
-      (el) => el.classList.contains("dashboard-button-off"),
-      button
-    );
+      return { in: response.TimeIn, out: response.TimeOut };
+    }, type);
 
-    if (isDisabled) {
-      return response("You have already started work for today.");
-    }
-
-    await clickElement(page, `${selector} .dashboard-button-div`);
-
-    return response();
+    return response(undefined, log);
   } catch (error) {
     return response(error.message);
   }
 };
 
-export const timeOut = async (page) => {
-  try {
-    const endWorkSelector = "#btndiv_EW";
-    const button = await page.waitForSelector(endWorkSelector);
+export const printLog = (log) => {
+  const table = new cliTable({
+    head: ["Time In", "Time Out"],
+    colWidths: [15, 15],
+  });
 
-    await wait(1500);
-
-    const isDisabled = await page.evaluate(
-      (el) => el.classList.contains("dashboard-button-off"),
-      button
-    );
-
-    if (isDisabled) {
-      return response("You have already ended work for today.");
-    }
-
-    await clickElement(page, `${endWorkSelector} .dashboard-button-div`);
-
-    await waitForText(page, "Are you sure you want to End your shift?");
-
-    await clickElement(page, ".ms-dialog-buttonset button:first-of-type");
-
-    return response();
-  } catch (error) {
-    return response(error.message);
-  }
+  table.push([log.in, log.out]);
+  console.log(table.toString());
 };
 
 export const printAttendance = async (page) => {
@@ -96,9 +80,10 @@ export const printAttendance = async (page) => {
   }
 };
 
-const response = (errorMessage) => {
+const response = (errorMessage, log) => {
   return {
     success: errorMessage === undefined,
     message: errorMessage ?? "",
+    log,
   };
 };

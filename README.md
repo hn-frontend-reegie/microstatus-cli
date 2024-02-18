@@ -18,3 +18,29 @@ PASSWORD=secret123!
 ```shell
 microstatus-cli
 ```
+
+# Development
+
+### Prerequisite
+
+- Nodejs
+
+### Steps
+
+1. Clone repository
+
+```shell
+git clone https://github.com/hn-frontend-reegie/microstatus-cli
+```
+
+2. Install dependencies
+
+```shell
+npm install
+```
+
+3. Run local dev
+
+```shell
+npm run dev
+```

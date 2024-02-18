@@ -1,6 +1,6 @@
 {
   "name": "microstatus-cli",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "CLI-based tool for MicroSourcing employees",
   "main": "./bin/index.js",
   "bin": {
@@ -15,6 +15,7 @@
     "cli-spinners": "^2.9.1",
     "cli-table": "^0.3.11",
     "dotenv": "^16.3.1",
+    "form-data": "^4.0.0",
     "ora": "^7.0.1",
     "prompts": "^2.4.2",
     "puppeteer": "^21.5.2",
