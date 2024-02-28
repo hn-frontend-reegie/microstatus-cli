@@ -4,11 +4,15 @@ import FormData from "form-data";
 
 export const ATTENDANCE = {
   TIME_IN: "W1",
-  TIME_OUT: "W2",
+  TIME_OUT: "EW",
 };
 
 export const logAttendance = async (page, type) => {
   try {
+    await page.waitForNavigation({
+      waitUntil: "networkidle0",
+    });
+
     const log = await page.evaluate(async (type) => {
       const data = new FormData();
       data.append("stat", type);
